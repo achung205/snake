@@ -1,4 +1,4 @@
 snake
 =====
 
-classic snake game programmed in python with the pygame library and implemented using MVC model
+classic snake game made in python with the pygame library and implemented using MVC model
