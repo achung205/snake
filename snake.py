@@ -9,6 +9,7 @@ SCREEN_WIDTH = 500
 SCREEN_HEIGHT = 500
 TILE_WIDTH = 10
 TILE_HEIGHT = 10
+DEBUG = 0
 
 def opposite(x):
     if x == 1:
@@ -101,8 +102,9 @@ class EventManager:
         
     #----------------------------------------------------------------------
     def post( self, event ):
-        if not isinstance(event, TickEvent) and not isinstance(event, MoveEvent):
-            print "Message: " + event.name
+        if DEBUG:
+            if not isinstance(event, TickEvent) and not isinstance(event, MoveEvent):
+                print "Message: " + event.name
         """Post a new event.  It will be broadcast to all listeners"""
         for listener in self.listeners.keys():
             #NOTE: If the weakref has died, it will be 
@@ -263,9 +265,10 @@ class Player():
         self.evManager.registerListener(self)
 
         self.snake = [Snake(evManager)]
+        self.score = 0
 
     def notify(self, event):
-        pass
+        return
 
 class SnakeSprite(pygame.sprite.Sprite):
     def __init__(self, group=None):
@@ -379,7 +382,7 @@ class Snake:
     def notify(self,event):
         if isinstance(event, TickEvent):
             self.move()
-        elif isinstance(event, GameStartedEvent) or isinstance(event, RestartEvent):
+        elif isinstance(event, RestartEvent):
             x = random.randint(0, SCREEN_WIDTH - TILE_WIDTH)
             y = random.randint(0, SCREEN_HEIGHT - TILE_HEIGHT)
             self.place(x - x % TILE_WIDTH, y - y % TILE_HEIGHT, 3)
@@ -447,7 +450,7 @@ class Apple:
         self.evManager.post(ev)
 
     def notify(self, event):
-        if isinstance(event, GameStartedEvent) or isinstance(event, AppleEatenEvent):
+        if isinstance(event, RestartEvent) or isinstance(event, AppleEatenEvent):
             self.placeRandom()
         if isinstance(event, GameOverEvent):
             self.state = self.STATE_INACTIVE
