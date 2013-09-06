@@ -8,4 +8,4 @@ todo
 - [ ] score tracking
 - [ ] display text on screen
 - [ ] multiplayer (network)
-
+- [ ] self playing
