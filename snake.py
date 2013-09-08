@@ -542,7 +542,7 @@ class AutoSnake(Snake):
             elif dest[1] < y:
                 return UP
 
-    def navigate(self, dest):
+    def greeyt(self, dest):
         closest = self.closestNeighbor(dest)
         newDir = self.getDirection(closest)
         self.changeHeadDirection(newDir)
@@ -550,7 +550,7 @@ class AutoSnake(Snake):
     def notify(self, event):
         if isinstance(event, TickEvent):
             if self.state == Snake.STATE_ACTIVE:
-                self.navigate(self.appleLocation)
+                self.greedy(self.appleLocation)
                 self.move()
         elif isinstance(event, ApplePlaceEvent):
             self.appleLocation = (event.apple.rect.x, event.apple.rect.y)
