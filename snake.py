@@ -7,9 +7,9 @@ LEFT = 3
 RIGHT = 4
 SCREEN_WIDTH = 500
 SCREEN_HEIGHT = 500
-TILE_WIDTH = 10
-TILE_HEIGHT = 10
-DEBUG = 0
+TILE_WIDTH = 20
+TILE_HEIGHT = 20
+DEBUG = 1
 
 def opposite(x):
     if x == 1:
@@ -55,10 +55,18 @@ class MapBuiltEvent(Event):
         self.name = "Map Built"
         self.map = gameMap
 
+class GameStartRequest(Event):
+    def __init__(self):
+        self.name = "Game start request"
+
 class GameStartedEvent(Event):
     def __init__(self, game):
         self.name = "Game Started"
         self.game = game
+
+class MenuDisplayRequest(Event):
+    def __init__(self):
+        self.name = "Menu display request"
 
 class ApplePlaceEvent(Event):
     def __init__(self, apple):
@@ -82,6 +90,14 @@ class SnakePlaceEvent(Event):
 class GameOverEvent(Event):
     def __init__(self):
         self.name = "Game over"
+
+class AddPlayerRequest(Event):
+    def __init__(self):
+        self.name = "Add player request"
+
+class AddComputerRequest(Event):
+    def __init__(self):
+        self.name = "Add computer request"
 
 class EventManager:
     """this object is responsible for coordinating most communication
@@ -126,7 +142,7 @@ class KeyBoardController:
                 if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     self.evManager.post(QuitEvent())
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    ev = RestartEvent()
+                    ev = GameStartRequest()
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
                     direction = UP
                     ev = MoveRequest(direction)
@@ -139,6 +155,10 @@ class KeyBoardController:
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
                     direction = LEFT
                     ev = MoveRequest(direction)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                    ev = AddPlayerRequest()
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_c:
+                    ev = AddComputerRequest()
                 if ev:
                     self.evManager.post(ev)
 
@@ -173,11 +193,28 @@ class View:
         pygame.display.set_caption("snake")
         self.background = pygame.Surface(self.window.get_size())
         self.background.fill((0,0,0)) # black
+
+        self.displayMenu()
+
         self.window.blit(self.background, (0,0))
         pygame.display.flip()
 
         self.snakeSprites = pygame.sprite.RenderUpdates()
         self.appleSprites = pygame.sprite.RenderUpdates()
+
+    def displayMenu(self):
+        font = pygame.font.Font(None, 30)
+        text = """Press SPACE BAR to start"""
+        textImg = font.render( text, 1, (255,255,255))
+        self.background.blit( textImg, (0,0) )
+        text = """P for new player"""
+        textImg = font.render(text, 1, (255,255,255))
+        self.background.blit(textImg, (0,font.get_linesize()))
+        text = """C for new computer"""
+        textImg = font.render(text, 1, (255,255,255))
+        self.background.blit(textImg, (0,2*font.get_linesize()))
+        self.window.blit(self.background,(0,0))
+        pygame.display.flip()
 
     def showSnake(self, snake):
         for s in snake.snakeList:
@@ -185,6 +222,11 @@ class View:
             bodySprite.rect.center = s.rect.center
 
     def showApple(self, apple):
+        self.background.fill((0,0,0))
+        self.window.blit(self.background, (0,0))
+        self.window.blit(self.background, (0,0))
+        pygame.display.flip()
+
         appleSprite = AppleSprite(self.appleSprites)
         appleSprite.rect.center = apple.rect.center
 
@@ -207,7 +249,7 @@ class View:
         
     def gameOver(self):
         self.snakeSprites.empty()
-        self.appleSprites.empty()        
+        self.appleSprites.empty()
 
     def notify(self, event):
         if isinstance(event, TickEvent):
@@ -234,6 +276,8 @@ class View:
             self.moveSnake(event.snake)
         elif isinstance(event, GameOverEvent):
             self.gameOver()
+        elif isinstance(event, MenuDisplayRequest):
+            self.displayMenu()
 
 
 class Game:
@@ -244,7 +288,10 @@ class Game:
         self.evManager = evManager
         self.evManager.registerListener(self)
         self.state = Game.STATE_PREPARING
-        self.players = [Player(evManager)]
+
+        self.maxplayers = 1
+        self.players = []
+        self.computers = []
         self.apples = [Apple(evManager)]
 
     def Start(self):
@@ -252,10 +299,33 @@ class Game:
         self.evManager.post(ev)
         self.state = Game.STATE_RUNNING
 
+    def addPlayer(self):
+        if len(self.players) + len(self.computers) == 0:
+            player = Player(self.evManager)
+            self.players.append(player)
+
+    def addComputer(self):
+        if len(self.players) + len(self.computers) == 0:
+            computer = Computer(self.evManager)
+            self.computers.append(computer)
+
     def notify(self, event):
-        if isinstance(event, TickEvent):
+        if isinstance(event, GameStartRequest):
             if self.state == Game.STATE_PREPARING:
                 self.Start()
+        elif isinstance(event, GameOverEvent):
+            del self.players[:]
+            del self.computers[:]
+            self.state = Game.STATE_PREPARING
+            ev = MenuDisplayRequest()
+            self.evManager.post(ev)
+        elif isinstance(event, AddPlayerRequest):
+            if self.state == Game.STATE_PREPARING:
+                self.addPlayer()
+        elif isinstance(event, AddComputerRequest):
+            if self.state == Game.STATE_PREPARING:
+                self.addComputer()
+        
 
 class Player():
     def __init__(self, evManager):
@@ -265,7 +335,18 @@ class Player():
         self.evManager.registerListener(self)
 
         self.snake = [Snake(evManager)]
-        self.score = 0
+
+    def notify(self, event):
+        return
+
+class Computer():
+    def __init__(self, evManager):
+        self.evManager = evManager
+        self.game = None
+        self.name = ""
+        self.evManager.registerListener(self)
+
+        self.snake = [AutoSnake(evManager)]
 
     def notify(self, event):
         return
@@ -292,7 +373,9 @@ class Snake:
 
         self.state = Snake.STATE_INACTIVE
         self.snakeList = []
-        self.speed = 25
+        self.score = len(self.snakeList)
+
+        self.speed = 20
         self.counter = 0
 
         #to prevent multiple keypresses at once
@@ -347,8 +430,13 @@ class Snake:
                     return
 
 
-    def place(self, x, y, length):
+    def placeRandom(self, length):
         if self.state == Snake.STATE_INACTIVE:
+            x = random.randint(0, SCREEN_WIDTH - TILE_WIDTH)
+            y = random.randint(0, SCREEN_HEIGHT - TILE_HEIGHT)
+            x = x - x%TILE_WIDTH
+            y = y - y%TILE_HEIGHT
+
             for i in range(length):
                 self.snakeList.append(SnakePiece(x, y + TILE_HEIGHT * i, UP, self.speed, self.counter))
             self.state = Snake.STATE_ACTIVE
@@ -370,6 +458,7 @@ class Snake:
         coords = calculateExtend(lastSnake.rect.x, lastSnake.rect.y, lastSnake.direction)
         snakePiece = SnakePiece(coords[0], coords[1], lastSnake.direction, self.speed, self.counter)
         self.snakeList.append(snakePiece)
+        self.score += 1
 
         ev = ExtendEvent(self)
         self.evManager.post(ev)
@@ -382,12 +471,91 @@ class Snake:
     def notify(self,event):
         if isinstance(event, TickEvent):
             self.move()
-        elif isinstance(event, RestartEvent):
-            x = random.randint(0, SCREEN_WIDTH - TILE_WIDTH)
-            y = random.randint(0, SCREEN_HEIGHT - TILE_HEIGHT)
-            self.place(x - x % TILE_WIDTH, y - y % TILE_HEIGHT, 3)
+        elif isinstance(event, GameStartedEvent):
+            self.placeRandom(3)
         elif isinstance(event, MoveRequest):
             self.changeHeadDirection(event.direction)
+        elif isinstance(event, AppleEatenEvent):
+            self.extend()
+        elif isinstance(event, GameOverEvent):
+            self.gameOver()
+
+
+class AutoSnake(Snake):
+    def __init__(self, evManager):
+        Snake.__init__(self, evManager)
+        self.speed = 25
+        self.appleLocation = ()
+
+    # return list of tiles adjacent to snake head
+    def getAdjacent(self):
+        x = self.snakeList[0].rect.x
+        y = self.snakeList[0].rect.y
+
+        up = (x, y - TILE_HEIGHT)
+        down = (x, y + TILE_HEIGHT)
+        left = (x - TILE_WIDTH, y)
+        right = (x + TILE_HEIGHT, y)
+
+        return [up, down, left, right]
+
+
+    def closestNeighbor(self, dest):
+        def dist(coord1, coord2):
+            sq1 = coord2[0] - coord1[0]
+            sq2 = coord2[1] - coord1[1]
+            sq1 = sq1**2
+            sq2 = sq2**2
+            result = (sq1 + sq2)**(0.5)
+            return result
+
+        distDict = {}
+        adjList = self.getAdjacent()
+        for adj in adjList:
+            distDict[adj] = dist(adj, dest)
+
+        for snake in self.snakeList:
+            distDict.pop((snake.rect.x, snake.rect.y), False)
+        for coords in distDict.keys():
+            if coords[0] > SCREEN_WIDTH or coords[0] < 0 or coords[1] > SCREEN_HEIGHT or coords[1] < 0:
+                del distDict[coords]
+
+        try:
+            result = min(distDict, key = distDict.get)
+            return result
+        except:
+            print "Dead end!"
+            self.evManager.post(GameOverEvent())
+
+    # returns direction toward tile
+    def getDirection(self, dest): 
+        if self.state == Snake.STATE_ACTIVE:       
+            x = self.snakeList[0].rect.x
+            y = self.snakeList[0].rect.y
+
+            if dest[0] > x:
+                return RIGHT
+            elif dest[0] < x:
+                return LEFT
+            elif dest[1] > y:
+                return DOWN
+            elif dest[1] < y:
+                return UP
+
+    def navigate(self, dest):
+        closest = self.closestNeighbor(dest)
+        newDir = self.getDirection(closest)
+        self.changeHeadDirection(newDir)
+
+    def notify(self, event):
+        if isinstance(event, TickEvent):
+            if self.state == Snake.STATE_ACTIVE:
+                self.navigate(self.appleLocation)
+                self.move()
+        elif isinstance(event, ApplePlaceEvent):
+            self.appleLocation = (event.apple.rect.x, event.apple.rect.y)
+        elif isinstance(event, GameStartedEvent):
+            Snake.placeRandom(self, 3)
         elif isinstance(event, AppleEatenEvent):
             self.extend()
         elif isinstance(event, GameOverEvent):
@@ -415,7 +583,6 @@ class SnakePiece:
             elif self.direction == RIGHT:
                 self.rect.x += TILE_WIDTH
             self.counter = 0
-
 
 class AppleSprite(pygame.sprite.Sprite):
     def __init__(self, group = None):
@@ -450,12 +617,12 @@ class Apple:
         self.evManager.post(ev)
 
     def notify(self, event):
-        if isinstance(event, RestartEvent) or isinstance(event, AppleEatenEvent):
+        if isinstance(event, GameStartedEvent) or isinstance(event, AppleEatenEvent):
             self.placeRandom()
-        if isinstance(event, GameOverEvent):
+        elif isinstance(event, GameOverEvent):
             self.state = self.STATE_INACTIVE
-        elif isinstance(event, RestartEvent) and self.state == self.STATE_INACTIVE:
-            self.placeRandom()
+        # elif isinstance(event, RestartEvent) and self.state == self.STATE_INACTIVE:
+        #     self.placeRandom()
 
 
 def main():
