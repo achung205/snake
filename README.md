@@ -7,7 +7,7 @@ note: the game is designed to redraw the snake every frame. this is less efficie
 
 todo
 ----
-- [ ] score tracking
+- [ ] score tracking ?
 - [ ] display text on screen
 - [ ] multiplayer (network)
 - [ ] self playing
