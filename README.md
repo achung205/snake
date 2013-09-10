@@ -11,4 +11,4 @@ todo
 - [ ] display text on screen (buttons?)
 - [ ] multiplayer (network)
 - [x] self playing
-- [ ] upload an executable
+- [ ] upload an executable (change font then try pyinstaller)
