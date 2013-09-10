@@ -11,3 +11,4 @@ todo
 - [ ] display text on screen (buttons?)
 - [ ] multiplayer (network)
 - [x] self playing
+- [ ] upload an executable
