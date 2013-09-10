@@ -10,4 +10,4 @@ todo
 - [ ] score tracking ?
 - [ ] display text on screen (buttons?)
 - [ ] multiplayer (network)
-- [ ] self playing
+- [x] self playing
