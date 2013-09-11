@@ -150,7 +150,7 @@ class View:
         self.appleSprites = pygame.sprite.RenderUpdates()
 
     def displayMenu(self):
-        font = pygame.font.Font(None, 30)
+        font = pygame.font.SysFont("Arial", 30)
         text = """Press SPACE BAR to start"""
         textImg = font.render( text, 1, (255,255,255))
         self.background.blit( textImg, (0,0) )
