@@ -10,4 +10,6 @@ todo
 - [ ] score tracking ?
 - [ ] display text on screen (buttons?)
 - [ ] multiplayer (network)
-- [ ] self playing
+- [x] self playing - better features (maximizing space?)
+- [ ] upload an executable (change font then try pyinstaller)
+- [ ] speed adjustment (movement/frame)
