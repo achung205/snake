@@ -11,5 +11,5 @@ todo
 - [ ] display text on screen (buttons?)
 - [ ] multiplayer (network)
 - [x] self playing - better features (maximizing space?)
-- [ ] upload an executable (change font then try pyinstaller)
+- [x] upload an executable (change font then try pyinstaller)
 - [ ] speed adjustment (movement/frame)
