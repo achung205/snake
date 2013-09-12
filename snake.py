@@ -50,7 +50,7 @@ class EventManager:
     """this object is responsible for coordinating most communication
     between the Model, View, and Controller.
     """
-    def __init__(self ):
+    def __init__(self):
         from weakref import WeakKeyDictionary
         self.listeners = WeakKeyDictionary()
 
@@ -116,11 +116,18 @@ class CPUSpinnerController:
         self.evManager.registerListener(self)
 
         self.go = 1
+        self.timer = 0
 
     def run(self):
         while self.go:
-            event = TickEvent()
-            self.evManager.post(event)
+            pygame.time.wait(10)
+
+            import time
+            clock = time.time() * 1000
+            if self.timer < clock:
+                event = TickEvent()
+                self.evManager.post(event)
+                self.timer = clock + 75
 
     def notify(self, event):
         if isinstance(event, QuitEvent):
@@ -357,13 +364,20 @@ class Snake:
         if self.state == Snake.STATE_ACTIVE:
             for snake in self.snakeList:
                 snake.move()
-            self.counter += self.speed
-            if self.counter >= 100:
-                self.counter = 0
-                self.moved = True
-                ev = MoveEvent(self)
-                self.evManager.post(ev)
-                self.changeBodyDirection(self.snakeList[0].direction)
+
+            # deprecated speed control method
+            # self.counter += self.speed
+            # if self.counter >= 100:
+            #     self.counter = 0
+            #     self.moved = True
+            #     ev = MoveEvent(self)
+            #     self.evManager.post(ev)
+            #     self.changeBodyDirection(self.snakeList[0].direction)
+
+            self.moved = True
+            ev = MoveEvent(self)
+            self.evManager.post(ev)
+            self.changeBodyDirection(self.snakeList[0].direction)
 
             #collision check
             headrect = self.snakeList[0].rect
@@ -571,18 +585,28 @@ class SnakePiece:
         self.counter = counter
 
     def move(self):
-        self.counter += self.speed
+        # deprecated speed control method
+        # self.counter += self.speed
 
-        if self.counter >= 100:
-            if self.direction == DOWN:
+        # if self.counter >= 100:
+        #     if self.direction == DOWN:
+        #         self.rect.y += TILE_HEIGHT
+        #     elif self.direction == UP:
+        #         self.rect.y -= TILE_HEIGHT
+        #     elif self.direction == LEFT:
+        #         self.rect.x -= TILE_WIDTH
+        #     elif self.direction == RIGHT:
+        #         self.rect.x += TILE_WIDTH
+        #     self.counter = 0
+
+        if self.direction == DOWN:
                 self.rect.y += TILE_HEIGHT
-            elif self.direction == UP:
-                self.rect.y -= TILE_HEIGHT
-            elif self.direction == LEFT:
-                self.rect.x -= TILE_WIDTH
-            elif self.direction == RIGHT:
-                self.rect.x += TILE_WIDTH
-            self.counter = 0
+        elif self.direction == UP:
+            self.rect.y -= TILE_HEIGHT
+        elif self.direction == LEFT:
+            self.rect.x -= TILE_WIDTH
+        elif self.direction == RIGHT:
+            self.rect.x += TILE_WIDTH
 
 class AppleSprite(pygame.sprite.Sprite):
     def __init__(self, group = None):
