@@ -13,4 +13,4 @@ todo
 - [ ] multiplayer (network)
 - [x] self playing - better features (maximizing space?)
 - [x] upload an executable (change font then try pyinstaller)
-- [ ] speed adjustment (movement/frame)
+- [x] 
