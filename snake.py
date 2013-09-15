@@ -236,8 +236,8 @@ class View:
 
 
 class Game:
-    STATE_PREPARING = 'preparing'
-    STATE_RUNNING = 'running'
+    STATE_PREPARING = 0
+    STATE_RUNNING = 1
 
     def __init__(self, evManager):
         self.evManager = evManager
@@ -553,21 +553,22 @@ class AutoSnake(Snake):
         return S[::-1]
 
     def autopilot(self, dest):
-        self.path = self.dijkstra(dest)
         if not self.path:
             self.greedy(dest)
         else:
-            newDir = self.getDirection(self.path[0])
-            self.changeHeadDirection(newDir)
+            curLocation = (self.snakeList[0].rect.x, self.snakeList[0].rect.y)            
+            if self.path[0] == curLocation:
+                self.path.pop(0)
+            self.greedy(self.path[0])
 
     def notify(self, event):
         if isinstance(event, TickEvent):
             if self.state == Snake.STATE_ACTIVE:
-                if self.counter == 0:
-                    self.autopilot(self.appleLocation)
+                self.autopilot(self.appleLocation)
                 self.move()
         elif isinstance(event, ApplePlaceEvent):
             self.appleLocation = (event.apple.rect.x, event.apple.rect.y)
+            self.path = self.dijkstra(self.appleLocation)
         elif isinstance(event, GameStartedEvent):
             Snake.placeRandom(self, 3)
         elif isinstance(event, AppleEatenEvent):
